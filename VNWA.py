@@ -43,15 +43,19 @@ class VNWAConnector(object):
             self.VNWA_MSG = wparam
             print "Connected to VNWA Process (%d, %d)"%(self.VNWA_MSG, self.VNWA_HWND)
         else:
-            ecode = wparam & 0x000ffff
+            ecode = wparam >> 16
 
             if ecode == 1:
-                print "Command OK"
-                
+                #print "Command OK"
+                pass
             elif ecode == 2:
                 raise IOError("Script file error, or non-existent file")
             elif ecode == 3:
-                raise IOError("File access error?")            
+                raise IOError("File access error?")
+            elif ecode == 5:
+                raise IOError("VNWA Overload - check audio settings")
+            else:
+                raise ValueError("Unknown error = %d"%ecode)
 
     def sendMessage(self, wparam, iparam, wait=True):
         self.waiting = True
@@ -69,12 +73,12 @@ class VNWAConnector(object):
             time.sleep(0.01)
 
     def setRFile(self, rstring):
-        self.sendMessage(6, 256)
+        self.sendMessage(6, 0)
         for r in rstring:
             self.sendMessage(6, ord(r))
 
     def setWFile(self, rstring):
-        self.sendMessage(7, 256)
+        self.sendMessage(7, 0)
         for r in rstring:
             self.sendMessage(7, ord(r))
             
@@ -120,7 +124,7 @@ class VNWA(object):
 
     def loadCal(self, filename):
         self.vnaconn.setRFile(filename)
-        self.vnaconn.sendMessage(2, None)
+        self.vnaconn.sendMessage(2, 0)
 
     def loadMasterCal(self, filename):
         self.vnaconn.setRFile(filename)
@@ -146,10 +150,9 @@ def main():
 
     vna.startVNWA('C://E//Documents//VNA Stuff//vnwa//VNWA.exe')
 
-
     vna.setStartFreq(10E6)
     vna.setStopFreq(100E6)
-    vna.loadCal('calibrate_500MHz_cables.cal')
+    vna.loadCal('C:\ctest.cal')
     vna.sweep(S21=True)
 
 if __name__ == "__main__":
